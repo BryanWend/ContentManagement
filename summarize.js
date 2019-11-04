@@ -69,6 +69,9 @@ function weightText(text){
 
     let finalOutput = assemble(sentenceWeights, 3); //Change this to change # of output sentences, can be an input when we have UI
     console.log('Summarized Content: \n' + finalOutput);
+
+    console.log('\n\n');
+    console.log('Shrunk from ' + Object.keys(sentenceWeights).length + ' sentences to 3 sentences!');
 }
 
 //Reconstruct weighted sentences
