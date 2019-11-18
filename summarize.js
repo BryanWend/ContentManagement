@@ -63,33 +63,38 @@ function weightText(text){
             }
         })
     });
-
-    // console.log(sentenceWeights);
-    // console.log('\n\n');
-
-    let finalOutput = assemble(sentenceWeights, 3); //Change this to change # of output sentences, can be an input when we have UI
-    console.log('Summarized Content: \n' + finalOutput);
-
-    console.log('\n\n');
-    console.log('Shrunk from ' + Object.keys(sentenceWeights).length + ' sentences to 3 sentences!');
+    return sentenceWeights;
 }
 
 //Reconstruct weighted sentences
-function assemble(weightsObj, reqNumOfSentences){
+//Use isSeparate to either return individual sentence array or concat summary, 0=returnArray, 1=returnString 
+function assemble(weightsObj, reqNumOfSentences, isSeparate){
 
-    let summarizedContent = '';
+    let summarizedContent;
     let weightVals = Object.values(sentenceWeights);
-    let topWeightIndices = findWeightIndices(weightVals, reqNumOfSentences);
-
-    for (let i = 0; i < topWeightIndices.length; i++){
-        summarizedContent = summarizedContent + ' ' + Object.keys(weightsObj)[topWeightIndices[i]];
-    };
+    let topWeightIndices = findWeightIndices(weightVals, reqNumOfSentences, isSeparate);
+    console.log(topWeightIndices);
+    //Keep within character limit
+    if(isSeparate == 0){
+        summarizedContent = [];
+        for (let i = 0; i < topWeightIndices.length; i++){
+            summarizedContent.push(Object.keys(weightsObj)[topWeightIndices[i]]);
+        };      
+    }
+    //Concat
+    else if(isSeparate == 1){
+        summarizedContent = '';
+        for (let i = 0; i < topWeightIndices.length; i++){
+            summarizedContent = summarizedContent + ' ' + Object.keys(weightsObj)[topWeightIndices[i]];
+        };       
+    }
 
     return summarizedContent;
 }
 
 //Get ORDERED index position of n largest weights
-function findWeightIndices(weightsArr, reqNumOfSentences) {
+//isDesc=0, isOrdered=1
+function findWeightIndices(weightsArr, reqNumOfSentences, isDesc) {
 
     let topWeightIndices = [];
 
@@ -104,6 +109,80 @@ function findWeightIndices(weightsArr, reqNumOfSentences) {
             topWeightIndices.pop();
         }
     }
-
-    return topWeightIndices.sort();
+    console.log(topWeightIndices);
+    if(isDesc == 0)
+        return topWeightIndices;
+    else if(isDesc == 1)
+        return topWeightIndices.sort();
 }
+
+function twitterize(sentenceArray){
+    let charLimit = 280;
+    let tweet = '';
+
+    for(let i = 0; i < sentenceArray.length; i++){
+
+        //Check if sent under limit and set at least defaut value
+        if(sentenceArray[i].length < charLimit){      
+            if(tweet == '')
+                tweet = sentenceArray[i];
+            
+            //See if you can pair a second sentence and stay under char limit
+            for(let j = i + 1; j < sentenceArray.length; j++){
+                if(sentenceArray[j].length < charLimit){
+                    if(tweet.length < charLimit && (tweet.length + sentenceArray[j].length < charLimit)){
+                        tweet = tweet + ' ' + sentenceArray[j];
+                    }
+                }
+            }
+        }
+    }
+    return tweet;
+}
+
+$('#convertBtn').on('click', function(){
+    // alert('button works');
+
+    // let weights = weightText(tornadoText);
+    let inputText = $('#textInput').val();
+    let weights = weightText(inputText);
+
+
+    let finalOutput = assemble(weights, 4, 1);
+    $('#otherText').text(finalOutput.trim());
+    // console.log('Summarized Content to 3: \n' + finalOutput);
+
+    // console.log('\n');
+    // console.log('Shrunk from ' + Object.keys(weights).length + ' sentences to 3 sentences!\n\n');
+
+    let twitterOutput = assemble(weights, 6, 0);
+    // console.log('Summarized Content to 1: \n' + twitterOutput);
+    // console.log(twitterOutput);
+
+    // console.log('\n');
+    // console.log('Shrunk from ' + Object.keys(weights).length + ' sentences to 1 sentences!');
+    // console.log('Characters: ' + twitterOutput.length);   
+    
+    let finalTweet = twitterize(twitterOutput);
+    // console.log(finalTweet);
+
+    $('#twitterText').text(finalTweet.trim());
+    $('#twitterText').trigger('keyup');
+
+    return false;
+})
+
+//Count characters for user
+$('#twitterText').on('keyup', function(){
+    let charLength = $('#twitterText').val().length;
+    console.log('keyup: ' + charLength)
+    $('#charCount').text(charLength + '/280')
+
+});
+
+
+
+$('#twitterBtn').on('click', function(){
+    //PUT TWITTER POST API CALL HERE FOR ONCLICK EVENT
+
+})
