@@ -180,9 +180,20 @@ $('#twitterText').on('keyup', function(){
 
 });
 
+$('#copyBtn').on('click', function(){
 
+    $('#otherText').select();
+    document.execCommand("copy");
+    window.getSelection().removeAllRanges();
+
+})
 
 $('#twitterBtn').on('click', function(){
     //PUT TWITTER POST API CALL HERE FOR ONCLICK EVENT
+
+})
+
+$('#fbBtn').on('click', function(){
+    //OPTIONAL FACEBOOK CALL IF TIME
 
 })
