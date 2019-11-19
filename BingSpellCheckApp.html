@@ -1,0 +1,256 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"> 
+    <title>Bing Spell Check</title>
+
+<style type="text/css">
+    html, body, div, p, h1, h2 {font-family: Verdana, "Lucida Sans", sans-serif;}
+
+    html, body, div, p  {font-weight: normal;}
+    h1, h2 {font-weight: bold;}
+    sup {font-weight: normal;}
+
+    html, body, div, p  {font-size: 12px;}
+    h1 {font-size: 20px;}
+    h2 {font-size: 16px;}
+    h1, h2 {clear: left;}
+
+    img#logo {float: right;}
+</style>
+
+<script type="text/javascript">
+
+var tmpResults;
+
+getSubscriptionKey = function() {
+
+    var COOKIE = "bing-spell-check-api-key";   // name used to store API key in key/value storage
+
+    function findCookie(name) {
+        var cookies = document.cookie.split(";");
+        for (var i = 0; i < cookies.length; i++) {
+            var keyvalue = cookies[i].split("=");
+            if (keyvalue[0].trim() === name) {
+                return keyvalue[1];
+            }
+        }
+        return "";
+        }
+
+    function getSubscriptionKeyCookie() {
+        var key = findCookie(COOKIE);
+        while (key.length !== 32) {
+            key = prompt("Enter Bing Spell Check API subscription key:", "").trim();
+            var expiry = new Date();
+            expiry.setFullYear(expiry.getFullYear() + 2);
+            document.cookie = COOKIE + "=" + key.trim() + "; expires=" + expiry.toUTCString();
+        }
+        return key;
+    }
+
+    function getSubscriptionKeyLocalStorage() {
+        var key = localStorage.getItem(COOKIE) || "";
+        while (key.length !== 32)
+            key = prompt("Enter Bing Spell Check API subscription key:", "").trim();
+        localStorage.setItem(COOKIE, key)
+        return key;
+    }
+
+    function getSubscriptionKey(invalidate) {
+        if (invalidate) {
+            try {
+                localStorage.removeItem(COOKIE);
+            } catch (e) {
+                document.cookie = COOKIE + "=";
+            }
+        } else {
+            try {
+                return getSubscriptionKeyLocalStorage();
+            } catch (e) {
+                return getSubscriptionKeyCookie();
+            }
+        }
+    }
+
+    return getSubscriptionKey;
+
+}();
+
+function pre(text) {
+    return "<pre>" + text.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</pre>"
+}
+
+function renderSearchResults(results) {
+    //document.getElementById("results").innerHTML = pre(JSON.stringify(results, null, 2));
+    console.log(pre(JSON.stringify(results, null, 2)));
+    tmpResults = results;
+}
+
+function renderErrorMessage(message, code) {
+    if (code)
+        //document.getElementById("results").innerHTML = "<pre>Status " + code + ": " + message + "</pre>";
+        console.log("<pre>Status " + code + ": " + message + "</pre>");
+    else
+        //document.getElementById("results").innerHTML = "<pre>" + message + "</pre>";
+        console.log("<pre>" + message + "</pre>");
+}
+
+function bingSpellCheck(query, key) {
+    document.getElementById("exe").style.display = "none";
+    document.getElementById("exe2").style.display = "block";
+
+    var endpoint = "https://api.cognitive.microsoft.com/bing/v7.0/spellcheck/";
+
+    var request = new XMLHttpRequest();
+
+    try {
+        request.open("GET", endpoint + "?mode=proof&mkt=en-US&text=" + encodeURIComponent(query));
+    }
+    catch (e) {
+        renderErrorMessage("Bad request");
+        return false;
+    }
+
+    request.setRequestHeader("Ocp-Apim-Subscription-Key", key);
+
+    request.addEventListener("load", function() {
+        if (this.status === 200) {
+            renderSearchResults(JSON.parse(this.responseText));
+        }
+        else {
+            if (this.status === 401) getSubscriptionKey(true);
+            renderErrorMessage(this.statusText, this.status);
+        }
+    });
+
+    request.addEventListener("error", function() {
+        renderErrorMessage("Network error");
+    });
+
+    request.addEventListener("abort", function() {
+        renderErrorMessage("Request aborted");
+    });
+
+    request.send();
+    return false;
+}
+// -->
+replaceAt = function(text, index, holdLength, replacement) {
+    return text.substr(0, index) + replacement+ text.substr(index + holdLength);
+}
+
+function spellCorrect(results) { // Original version of correction (for testing)
+    jsonResults = results;
+    tmpInput = document.getElementById("userInput").value;
+    if (jsonResults.flaggedTokens.length == 0) {
+        document.getElementById("output").innerHTML = "None uncorrect words found."
+    }
+    else {
+        for (i=0; i<jsonResults.flaggedTokens.length; i++) {
+            lenOfWordToChange = jsonResults.flaggedTokens[i].token.length;
+            positionToChange = jsonResults.flaggedTokens[i].offset;
+            replacement = jsonResults.flaggedTokens[i].suggestions[0].suggestion;
+            tmpInput = replaceAt(tmpInput, positionToChange, lenOfWordToChange, replacement);
+        }
+        document.getElementById("output").innerHTML = tmpInput;
+    }
+}
+
+function spellCorrect2(results) {  // Correct whole sentences in one time
+    jsonResults = results;
+    tmpInput = document.getElementById("userInput").value;
+    if (jsonResults.flaggedTokens.length == 0) {
+        document.getElementById("output").innerHTML = "None uncorrect words found."
+    }
+    else {
+        for (i=0; i<jsonResults.flaggedTokens.length; i++) {
+            wordToChange = jsonResults.flaggedTokens[i].token;
+            replacement = jsonResults.flaggedTokens[i].suggestions[0].suggestion;
+            tmpInput = tmpInput.replace(wordToChange, replacement);
+        }
+        document.getElementById("output").innerHTML = tmpInput;
+    }
+}
+
+function spellCorrect3_1(results) { // Highlight and Correct each wrong word optional and one by one
+    jsonResults = results;
+    query = document.getElementById("userInput");
+    if (jsonResults.flaggedTokens.length == 0) {
+        alert("None uncorrect words found.");
+        document.getElementById("options").style.display = "none";
+        document.getElementById("exe").style.display = "block";
+        document.getElementById("exe2").style.display = "none";
+    }
+    else {
+        document.getElementById("options").style.display = "block";
+        wordToChange = jsonResults.flaggedTokens[0].token;
+        replacements = jsonResults.flaggedTokens[0].suggestions;
+        query.SelStart = jsonResults.flaggedTokens[0].offset;
+        query.SelLength = jsonResults.flaggedTokens[0].token.length;
+        numOfOpt = replacements.length;
+        optToAdd = ""
+        for (i=0; i<numOfOpt; i++) {
+            if (i==0) {
+                optToAdd += "<option selected>" + replacements[i].suggestion + "</option>";
+            }
+            else {
+                optToAdd += "<option>" + replacements[i].suggestion + "</option>";
+            }
+        }
+        document.getElementById("suggest_option").innerHTML = optToAdd;
+    }
+}
+
+function spellCorrect3_2(results) {
+    wordToChange = results.flaggedTokens[0].token;
+    opt = document.getElementById("suggest_option").value;
+    inputText = document.getElementById("userInput").value;
+    inputText = inputText.replace(wordToChange, opt);
+    document.getElementById("userInput").value = inputText;
+    results.flaggedTokens.shift();
+    this.tmpResults = results;
+    spellCorrect3_1(this.tmpResults);
+}
+
+function spellCorrect3_3(results) {
+    results.flaggedTokens.shift();
+    spellCorrect3_1(results);
+}
+
+</script>
+
+</head>
+
+<body onload="document.forms.bing.query.focus(); getSubscriptionKey();">
+
+<div id="options" style="width:20%; float:right; background-color:cornsilk; display: none;">
+    <div style="height: 100vh;">
+        <select id="suggest_option" name="suggest_option" size="3"></select><br>
+        <button name="replace" onclick="spellCorrect3_2(tmpResults)">Replace</button>
+        <button name="skip" onclick="spellCorrect3_3(tmpResults)">Skip</button>
+    </div>
+</div>
+<form name="bing" onsubmit="return bingSpellCheck(this.query.value, getSubscriptionKey())">
+    <h2>Spell Check</h2>
+    <textarea style="max-width: 79%;" id="userInput" name="query" placeholder="Spell Check" autocomplete=off spellcheck="true">
+    </textarea>
+</form>
+<button id="exe" onclick="return bingSpellCheck(bing.query.value, getSubscriptionKey())" style="display: block;">Spell Check</button>
+<button id="exe2" onclick="spellCorrect3_1(tmpResults)" style="display: none;">Spell Correct</button>
+<h2></h2>
+<p id="output"></p>
+
+<h2></h2>
+<div id="results">
+<p></p>
+</div>
+
+
+</body>
+
+<script>
+    
+</script>
+</html>
