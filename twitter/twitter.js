@@ -16,5 +16,5 @@ function postATweet() {
 
     cb.__call("statuses_update", params, function(reply, rate, err) {});
     console.log("third step");
-    alert("Yaooo! You post A Tweet here!!!");
+
 }

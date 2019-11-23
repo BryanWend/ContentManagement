@@ -1,3 +1,7 @@
+
+//FOR BING WEB SEARCH
+const bingAPIKey = 'PUT_API_KEY_HERE';
+
 //Official stopword list from NLTK
 let stopwords = ['i','me','my','myself','we','our','ours','ourselves','you','your','yours','yourself','yourselves','he','him','his','himself','she','her','hers','herself','it','its','itself','they','them','their','theirs','themselves','what','which','who','whom','this','that','these','those','am','is','are','was','were','be','been','being','have','has','had','having','do','does','did','doing','a','an','the','and','but','if','or','because','as','until','while','of','at','by','for','with','about','against','between','into','through','during','before','after','above','below','to','from','up','down','in','out','on','off','over','under','again','further','then','once','here','there','when','where','why','how','all','any','both','each','few','more','most','other','some','such','no','nor','not','only','own','same','so','than','too','very','s','t','can','will','just','don','should','now']
 
@@ -143,6 +147,48 @@ function twitterize(sentenceArray){
 $('#convertBtn').on('click', function(){
     // alert('button works');
 
+    //Clear extra cards
+	$('.cardWrapper').remove();
+
+    let bingQuery = $('#descInput').val() + 'site: communities.usaa.com';
+    //Bing API call
+	$(()=> {
+        var params = {
+            // Request parameters
+            "q": "mental health site:communities.usaa.com",
+            "count": "3",
+            // "offset": "0",
+            // "mkt": "en-us",
+            //"safesearch": "Moderate",
+        };
+        $.ajax({
+            url: "https://api.cognitive.microsoft.com/bing/v7.0/search?" + $.param(params),
+            beforeSend: function(xhrObj){
+                // Request headers
+                xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", bingAPIKey); //replace value with your own key
+            },
+            type: "GET",
+        })
+        .done(data => {
+        	console.log(data);
+
+			let count = data.webPages.value.length
+
+			for(let i = 0; i < count; i++){
+				// console.log(data.webPages.value[i].name);
+				// console.log(data.webPages.value[i].url);
+
+				$('.related').append('<div class="pb-3 cardWrapper"><a href="' + data.webPages.value[i].url 
+					+ '" target="_blank"><div class="card"><div class="card-body"><p class="card-text">' 
+					+ data.webPages.value[i].name + '</p></div></div></a></div>');
+			}
+        })
+        .fail(() => {
+            alert("error");
+        });
+    });
+
+
     // let weights = weightText(tornadoText);
     let inputText = $('#textInput').val();
     let weights = weightText(inputText);
@@ -169,6 +215,7 @@ $('#convertBtn').on('click', function(){
     $('#twitterText').text(finalTweet.trim());
     $('#twitterText').trigger('keyup');
 
+
     return false;
 })
 
@@ -177,6 +224,11 @@ $('#twitterText').on('keyup', function(){
     let charLength = $('#twitterText').val().length;
     console.log('keyup: ' + charLength)
     $('#charCount').text(charLength + '/280')
+
+    if (charLength > 280)
+    	$('#twitterText').addClass('overLimit');
+    else
+    	$('#twitterText').removeClass('overLimit');
 
 });
 
