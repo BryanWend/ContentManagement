@@ -1,27 +1,3 @@
-
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8"> 
-    <title>Bing Spell Check</title>
-
-<style type="text/css">
-    html, body, div, p, h1, h2 {font-family: Verdana, "Lucida Sans", sans-serif;}
-
-    html, body, div, p  {font-weight: normal;}
-    h1, h2 {font-weight: bold;}
-    sup {font-weight: normal;}
-
-    html, body, div, p  {font-size: 12px;}
-    h1 {font-size: 20px;}
-    h2 {font-size: 16px;}
-    h1, h2 {clear: left;}
-
-    img#logo {float: right;}
-</style>
-
-<script type="text/javascript">
-
 var tmpResults;
 
 getSubscriptionKey = function() {
@@ -143,7 +119,7 @@ replaceAt = function(text, index, holdLength, replacement) {
 
 function spellCorrect(results) { // Original version of correction (for testing)
     jsonResults = results;
-    tmpInput = document.getElementById("userInput").value;
+    tmpInput = document.getElementById("textInput").value;
     if (jsonResults.flaggedTokens.length == 0) {
         document.getElementById("output").innerHTML = "None uncorrect words found."
     }
@@ -160,9 +136,9 @@ function spellCorrect(results) { // Original version of correction (for testing)
 
 function spellCorrect2(results) {  // Correct whole sentences in one time
     jsonResults = results;
-    tmpInput = document.getElementById("userInput").value;
+    tmpInput = document.getElementById("textInput").value;
     if (jsonResults.flaggedTokens.length == 0) {
-        document.getElementById("output").innerHTML = "None uncorrect words found."
+        alert("None uncorrect word found.")
     }
     else {
         for (i=0; i<jsonResults.flaggedTokens.length; i++) {
@@ -170,13 +146,16 @@ function spellCorrect2(results) {  // Correct whole sentences in one time
             replacement = jsonResults.flaggedTokens[i].suggestions[0].suggestion;
             tmpInput = tmpInput.replace(wordToChange, replacement);
         }
-        document.getElementById("output").innerHTML = tmpInput;
+        document.getElementById("textInput").value = tmpInput;
+        alert("Spell correction has finished!")
     }
+    document.getElementById("exe").disabled = false;
+    document.getElementById("exe2").disabled = true;
 }
 
 function spellCorrect3_1(results) { // Highlight and Correct each wrong word optional and one by one
     jsonResults = results;
-    query = document.getElementById("userInput");
+    query = document.getElementById("textInput");
     if (jsonResults.flaggedTokens.length == 0) {
         alert("None uncorrect words found.");
         document.getElementById("options").style.display = "none";
@@ -206,9 +185,9 @@ function spellCorrect3_1(results) { // Highlight and Correct each wrong word opt
 function spellCorrect3_2(results) {
     wordToChange = results.flaggedTokens[0].token;
     opt = document.getElementById("suggest_option").value;
-    inputText = document.getElementById("userInput").value;
+    inputText = document.getElementById("textInput").value;
     inputText = inputText.replace(wordToChange, opt);
-    document.getElementById("userInput").value = inputText;
+    document.getElementById("textInput").value = inputText;
     results.flaggedTokens.shift();
     this.tmpResults = results;
     spellCorrect3_1(this.tmpResults);
@@ -218,39 +197,3 @@ function spellCorrect3_3(results) {
     results.flaggedTokens.shift();
     spellCorrect3_1(results);
 }
-
-</script>
-
-</head>
-
-<body onload="document.forms.bing.query.focus(); getSubscriptionKey();">
-
-<div id="options" style="width:20%; float:right; background-color:cornsilk; display: none;">
-    <div style="height: 100vh;">
-        <select id="suggest_option" name="suggest_option" size="3"></select><br>
-        <button name="replace" onclick="spellCorrect3_2(tmpResults)">Replace</button>
-        <button name="skip" onclick="spellCorrect3_3(tmpResults)">Skip</button>
-    </div>
-</div>
-<form name="bing" onsubmit="return bingSpellCheck(this.query.value, getSubscriptionKey())">
-    <h2>Spell Check</h2>
-    <textarea style="max-width: 79%;" id="userInput" name="query" placeholder="Spell Check" autocomplete=off spellcheck="true">
-    </textarea>
-</form>
-<button id="exe" onclick="return bingSpellCheck(bing.query.value, getSubscriptionKey())" style="display: block;">Spell Check</button>
-<button id="exe2" onclick="spellCorrect3_1(tmpResults)" style="display: none;">Spell Correct</button>
-<h2></h2>
-<p id="output"></p>
-
-<h2></h2>
-<div id="results">
-<p></p>
-</div>
-
-
-</body>
-
-<script>
-    
-</script>
-</html>

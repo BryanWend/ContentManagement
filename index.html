@@ -28,12 +28,14 @@
         <div class="row pt-4">
             <div class="col-md-6 pad-r" style="border-right: 4px double #1A3258;">
                 <p>To use, provide a short 1-5 word description of the topic of the article.  Then, insert the article text in the large area below</p>
-                <form>
+                <form name="bing">
                     <div class="form-group">
                         <label for="descInput">Topic:</label>
                         <input class="form-control" id="descInput"></input>
                         <label class="pt-3" for="textInput">Article Text:</label>
-                        <textarea class="form-control" id="textInput" rows="20"></textarea>
+                        <textarea class="form-control" id="textInput" name="query" rows="20"></textarea>
+                        <button id="exe" onclick="return bingSpellCheck(bing.query.value, getSubscriptionKey())">Spell Check</button>
+                        <button id="exe2" onclick="spellCorrect2(tmpResults)" disabled=true>Spell Correct</button>
                     </div>
                     <button class="btn btn-primary convertBtn" type="submit" id="convertBtn">Convert &raquo</button>
                 </form>
@@ -81,6 +83,7 @@
     <script src="summarize.js"></script>
     <script type="text/javascript" src="./twitter/codebird.js"></script>
     <script type="text/javascript" src="./twitter/twitter.js"></script>
+    <script type="text/javascript" src="spellCheck.js"></script>
     <!-- <script type="text/javascript" src="./bingsearch.js"></script> -->
 
 </body>
